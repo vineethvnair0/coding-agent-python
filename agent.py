@@ -40,24 +40,36 @@ def solve_problem(problem: str, sample_input: str, expected_output: str):
     Before writing code, explain your approach.
     Write the solution, execute it to verify it works.
     After executing, explain what the output means and whether it matches the expected output.
+    When executing the code, make sure the last line uses print() to print ONLY the final answer as a single value. No extra text, no True/False, just the answer.
+
+
 
     Problem: {problem}
     Sample Input: {sample_input}
     Expected Output: {expected_output}
     """)]
     result = agent.invoke({"messages": messages})
-    # print("\n--- Agent Steps ---")
-    # for message in result["messages"]:
-    #     print(f"\n[{message.type}]")
-    #     if message.content:
-    #         print(f"Content: {message.content}")
-    #     if hasattr(message, 'tool_calls') and message.tool_calls:
-    #         print(f"Tool call: {message.tool_calls[0]['name']}")
-    #         print(f"Code: {message.tool_calls[0]['args'].get('code', '')}")
-    print("\n--- Final Answer ---")
-    print(result["messages"][-1].content)
+    approach = ""
+    final_code = ""
+    actual_output = ""
 
-# solve_problem("Write a function that reverses words in a sentence but keeps punctuation attached to the word. Input: 'Hello, world! How are you?' Expected output: 'you? are How world! Hello,'")
+    for message in result["messages"]:
+        if message.type == "ai" and not approach and message.content:
+            approach = message.content
+        if hasattr(message, 'tool_calls') and message.tool_calls:
+            final_code = message.tool_calls[0]['args'].get('code', '')
+        if message.type == "tool" and message.content != "No output produced.":
+            actual_output = message.content
+
+    verdict = "PASS" if expected_output.strip() in actual_output.strip() else "FAIL"
+
+    print("\n--- Solution ---")
+    print(f"Approach: {approach}")
+    print(f"\nCode:\n{final_code}")
+    print(f"\nOutput: {actual_output}")
+    print(f"\nVerdict: {verdict}")
+
+# solve_problem("Write a function that reverses words in a sentence but keeps punctuation attached to the word.",  "Hello, world! How are you?", "you? are How world! Hello,")
 problem = input("Enter the problem: ").strip()
 sample_input = input("Enter the sample input: ").strip()
 expected_output = input("Enter the expected output: ").strip()
