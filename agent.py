@@ -1,5 +1,6 @@
-import os
 import subprocess
+import sys
+
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langchain_core.tools import tool
@@ -32,26 +33,43 @@ def execute_code(code: str) -> str:
 tools = [execute_code]
 agent = create_react_agent(llm, tools)
 
-def solve_problem(problem: str):
+def solve_problem(problem: str, sample_input: str, expected_output: str):
     print(f"\nProblem: {problem}\n")
     messages = [HumanMessage(content=f"""
     You are a coding assistant. Solve the following problem in Python.
     Before writing code, explain your approach.
     Write the solution, execute it to verify it works.
     After executing, explain what the output means and whether it matches the expected output.
-    
+
     Problem: {problem}
+    Sample Input: {sample_input}
+    Expected Output: {expected_output}
     """)]
     result = agent.invoke({"messages": messages})
-    print("\n--- Agent Steps ---")
-    for message in result["messages"]:
-        print(f"\n[{message.type}]")
-        if message.content:
-            print(f"Content: {message.content}")
-        if hasattr(message, 'tool_calls') and message.tool_calls:
-            print(f"Tool call: {message.tool_calls[0]['name']}")
-            print(f"Code: {message.tool_calls[0]['args'].get('code', '')}")
+    # print("\n--- Agent Steps ---")
+    # for message in result["messages"]:
+    #     print(f"\n[{message.type}]")
+    #     if message.content:
+    #         print(f"Content: {message.content}")
+    #     if hasattr(message, 'tool_calls') and message.tool_calls:
+    #         print(f"Tool call: {message.tool_calls[0]['name']}")
+    #         print(f"Code: {message.tool_calls[0]['args'].get('code', '')}")
     print("\n--- Final Answer ---")
     print(result["messages"][-1].content)
 
-solve_problem("Write a function that reverses words in a sentence but keeps punctuation attached to the word. Input: 'Hello, world! How are you?' Expected output: 'you? are How world! Hello,'")
+# solve_problem("Write a function that reverses words in a sentence but keeps punctuation attached to the word. Input: 'Hello, world! How are you?' Expected output: 'you? are How world! Hello,'")
+problem = input("Enter the problem: ").strip()
+sample_input = input("Enter the sample input: ").strip()
+expected_output = input("Enter the expected output: ").strip()
+
+if not problem or not sample_input or not expected_output:
+    print("Error: Problem, sample input, and expected output are all required.")
+    exit(1)
+
+print(f"\nProblem: {problem}")
+print(f"Sample Input: {sample_input}")
+print(f"Expected Output: {expected_output}")
+
+solve_problem(problem, sample_input, expected_output)
+
+
