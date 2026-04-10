@@ -22,7 +22,10 @@ def execute_code(code: str) -> str:
         timeout=10
     )
     if result.returncode == 0:
-        return result.stdout
+        output = result.stdout.strip()
+        if not output:
+            return "No output produced."
+        return output
     else:
         return f"Error: {result.stderr}"
 
@@ -33,19 +36,22 @@ def solve_problem(problem: str):
     print(f"\nProblem: {problem}\n")
     messages = [HumanMessage(content=f"""
     You are a coding assistant. Solve the following problem in Python.
-    Write the solution, execute it to verify it works, and show the final answer.
+    Before writing code, explain your approach.
+    Write the solution, execute it to verify it works.
+    After executing, explain what the output means and whether it matches the expected output.
     
     Problem: {problem}
     """)]
     result = agent.invoke({"messages": messages})
     print("\n--- Agent Steps ---")
     for message in result["messages"]:
+        print(f"\n[{message.type}]")
         if message.content:
-            print(f"\n[{message.type}]: {message.content}")
-        elif hasattr(message, 'tool_calls') and message.tool_calls:
-            print(f"\n[{message.type} - tool call]: {message.tool_calls[0]['name']}")
+            print(f"Content: {message.content}")
+        if hasattr(message, 'tool_calls') and message.tool_calls:
+            print(f"Tool call: {message.tool_calls[0]['name']}")
             print(f"Code: {message.tool_calls[0]['args'].get('code', '')}")
     print("\n--- Final Answer ---")
     print(result["messages"][-1].content)
 
-solve_problem("Find the two numbers in a list that add up to a target. Input: [2, 7, 11, 15], target = 9. Expected output: [0, 1]")
+solve_problem("Write a function that reverses words in a sentence but keeps punctuation attached to the word. Input: 'Hello, world! How are you?' Expected output: 'you? are How world! Hello,'")
