@@ -33,20 +33,17 @@ def execute_code(code: str) -> str:
 tools = [execute_code]
 agent = create_react_agent(llm, tools)
 
-def solve_problem(problem: str, sample_input: str, expected_output: str):
+def solve_problem(problem: str, test_cases: list):
+    test_cases_text = "\n".join([f"Sample Input: {inp}\nExpected Output: {out}" for inp, out in test_cases])
     print(f"\nProblem: {problem}\n")
     messages = [HumanMessage(content=f"""
     You are a coding assistant. Solve the following problem in Python.
     Before writing code, explain your approach.
-    Write the solution, execute it to verify it works.
-    After executing, explain what the output means and whether it matches the expected output.
-    When executing the code, make sure the last line uses print() to print ONLY the final answer as a single value. No extra text, no True/False, just the answer.
-
-
+    Write the solution and test it against ALL the sample inputs below.
+    When executing the code, make sure to print the output for each test case on a separate line using print(). No extra text, just the answers.
 
     Problem: {problem}
-    Sample Input: {sample_input}
-    Expected Output: {expected_output}
+    {test_cases_text}
     """)]
     result = agent.invoke({"messages": messages})
     approach = ""
@@ -61,27 +58,29 @@ def solve_problem(problem: str, sample_input: str, expected_output: str):
         if message.type == "tool" and message.content != "No output produced.":
             actual_output = message.content
 
-    verdict = "PASS" if expected_output.strip() in actual_output.strip() else "FAIL"
-
     print("\n--- Solution ---")
     print(f"Approach: {approach}")
     print(f"\nCode:\n{final_code}")
-    print(f"\nOutput: {actual_output}")
-    print(f"\nVerdict: {verdict}")
+    print(f"\nResults:")
 
-# solve_problem("Write a function that reverses words in a sentence but keeps punctuation attached to the word.",  "Hello, world! How are you?", "you? are How world! Hello,")
+    actual_lines = actual_output.strip().split("\n")
+    for i, (inp, expected) in enumerate(test_cases):
+        actual = actual_lines[i].strip() if i < len(actual_lines) else "No output"
+        verdict = "PASS" if actual == expected.strip() else "FAIL"
+        print(f"  Test {i+1}: Input={inp} | Expected={expected} | Actual={actual} | {verdict}")
+
 problem = input("Enter the problem: ").strip()
-sample_input = input("Enter the sample input: ").strip()
-expected_output = input("Enter the expected output: ").strip()
 
-if not problem or not sample_input or not expected_output:
-    print("Error: Problem, sample input, and expected output are all required.")
+test_cases = []
+while True:
+    sample_input = input("Enter sample input (or 'done' to finish): ").strip()
+    if sample_input.lower() == "done":
+        break
+    expected_output = input("Enter expected output: ").strip()
+    test_cases.append((sample_input, expected_output))
+
+if not problem or not test_cases:
+    print("Error: Problem and at least one test case are required.")
     exit(1)
 
-print(f"\nProblem: {problem}")
-print(f"Sample Input: {sample_input}")
-print(f"Expected Output: {expected_output}")
-
-solve_problem(problem, sample_input, expected_output)
-
-
+solve_problem(problem, test_cases)
