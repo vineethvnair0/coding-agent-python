@@ -38,7 +38,14 @@ def solve_problem(problem: str):
     Problem: {problem}
     """)]
     result = agent.invoke({"messages": messages})
-    print("\nFinal Answer:")
+    print("\n--- Agent Steps ---")
+    for message in result["messages"]:
+        if message.content:
+            print(f"\n[{message.type}]: {message.content}")
+        elif hasattr(message, 'tool_calls') and message.tool_calls:
+            print(f"\n[{message.type} - tool call]: {message.tool_calls[0]['name']}")
+            print(f"Code: {message.tool_calls[0]['args'].get('code', '')}")
+    print("\n--- Final Answer ---")
     print(result["messages"][-1].content)
 
 solve_problem("Find the two numbers in a list that add up to a target. Input: [2, 7, 11, 15], target = 9. Expected output: [0, 1]")
