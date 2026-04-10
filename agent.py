@@ -1,5 +1,6 @@
 import subprocess
 import sys
+import time
 
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
@@ -45,11 +46,14 @@ def solve_problem(problem: str, test_cases: list):
     Problem: {problem}
     {test_cases_text}
     """)]
+    start_time = time.time()
     result = agent.invoke({"messages": messages})
     approach = ""
     final_code = ""
     actual_output = ""
 
+
+    elapsed = round(time.time() - start_time, 2)
     for message in result["messages"]:
         if message.type == "ai" and not approach and message.content:
             approach = message.content
@@ -68,6 +72,8 @@ def solve_problem(problem: str, test_cases: list):
         actual = actual_lines[i].strip() if i < len(actual_lines) else "No output"
         verdict = "PASS" if actual == expected.strip() else "FAIL"
         print(f"  Test {i+1}: Input={inp} | Expected={expected} | Actual={actual} | {verdict}")
+    print(f"\nTime taken: {elapsed} seconds")
+
 
 problem = input("Enter the problem: ").strip()
 
